@@ -1,0 +1,10 @@
+fastapi
+langchain
+pdfplumber
+uvicorn
+python-multipart
+sentence-transformers
+psycopg2-binary
+pgvector
+google-generativeai
+google-genai
