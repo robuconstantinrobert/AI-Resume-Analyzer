@@ -3,14 +3,21 @@ export {};
 const API_BASE = "http://127.0.0.1:8000";
 
 export async function uploadResumes(files: FileList) {
-  const data = new FormData();
-  Array.from(files).forEach(file => data.append("files", file));
-  const res = await fetch(`${API_BASE}/upload/`, {
+  const formData = new FormData();
+  Array.from(files).forEach((file) => formData.append("files", file));
+  const resp = await fetch("http://localhost:8000/upload/", {
     method: "POST",
-    body: data,
+    body: formData,
   });
+  return await resp.json();
+}
+
+export async function getUploadStatus(task_id: string) {
+  const res = await fetch(`${API_BASE}/upload_status/${task_id}`);
   return await res.json();
 }
+
+
 
 export async function searchResumes(query: string, top_k: number = 5) {
   const res = await fetch(`${API_BASE}/search/`, {

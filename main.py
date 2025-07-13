@@ -1,63 +1,48 @@
 
-
-
-
-"""
-
-Resume ingestion and processing
-    -> upload parse and chunk resumes PDF and text files
-    -> extract and chunk resume text for downstream processing
-    -> generate embeddings for each chunk using allMiniLM
-
-Vector Database Integration
-    -> store embeddings and metadata in a vector DB -> PostgreSQL and pgvector
-    -> perform similarity searches
-
-RAG Chatbot
-    -> accept a job description as input
-    -> retrieve the most relevant resume chunks
-    -> use an LLM to generate conversational answers about candidate fit
-    -> support followup questions based on the current job search
-
-Optional
-    -> WEB UI
-    -> Metadata search
-        -> extract and store structured metadata like skills, titles, years of experience, enable SQL search
-
-"""
-
 from fastapi import FastAPI, UploadFile, File, Body
-from resume_ingest import process_resume_file, embed_query, call_llm_gemini
+from resume_ingest import process_resume_task, embed_query, call_llm_gemini
 from db import search_similar_chunks
+from celery_app import celery
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.post("/upload/")
 async def upload_resumes(files: list[UploadFile] = File(...)):
-    results = []
+    tasks = []
     for file in files:
         content = await file.read()
         filename = file.filename
-        chunked = process_resume_file(content, filename)
-        results.append({
-            "filename": filename,
-            "num_chunks": len(chunked),
-            "chunks": [
-                {
-                    "text": c["text"][:200] + "...",
-                    "embedding_preview": c["embedding"][:5]
-                }
-                for c in chunked[:2]
-            ]
-        })
-    return {"processed": results}
+        task = process_resume_task.delay(content, filename)
+        tasks.append({"filename": filename, "task_id": task.id})
+    return {"submitted": tasks}
 
 
 @app.post("/search/")
-async def search_resumes(query: str = Body(..., embed=True), top_k: int = 5):
+async def search_resumes(query: str = Body(..., embed=True), top_k: int = 5, offset: int = 0):
     embedding = embed_query(query)
-    results = search_similar_chunks(embedding, top_k=top_k)
+    results = search_similar_chunks(embedding, top_k=top_k, offset=offset)
     return {"results": results}
+
+
+@app.get("/upload_status/{task_id}")
+async def get_upload_status(task_id: str):
+    async_result = celery.AsyncResult(task_id)
+    return {
+        "task_id": task_id,
+        "status": async_result.status,
+        "result": async_result.result if async_result.ready() else None
+    }
 
 
 @app.post("/chat/")

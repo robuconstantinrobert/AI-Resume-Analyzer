@@ -1,4 +1,4 @@
-import React from "react";
+import './App.css';
 import ResumeUpload from "./ResumeUpload";
 import ResumeSearch from "./ResumeSearch";
 import RAGChat from "./RAGChat";

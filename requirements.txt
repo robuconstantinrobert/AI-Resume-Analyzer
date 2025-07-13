@@ -8,3 +8,4 @@ psycopg2-binary
 pgvector
 google-generativeai
 google-genai
+celery[redis]

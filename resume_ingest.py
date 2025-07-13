@@ -2,13 +2,15 @@ import io
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import pdfplumber
 from sentence_transformers import SentenceTransformer
-from db import insert_chunk
+from db import insert_chunks_bulk
 import os
 import google.generativeai as genai
-
+from celery_app import celery
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+
 
 def embed_chunks(chunks: list[str]):
     return embedding_model.encode(chunks).tolist()
@@ -34,6 +36,9 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 def extract_text_from_txt(file_bytes: bytes) -> str:
     return file_bytes.decode('utf-8', errors='ignore')
 
+@celery.task(bind=True)
+def process_resume_task(self, file_bytes, filename):
+    return process_resume_file(file_bytes, filename)
 
 def process_resume_file(file_bytes: bytes, filename: str):
     if filename.lower().endswith(".pdf"):
@@ -55,13 +60,12 @@ def process_resume_file(file_bytes: bytes, filename: str):
 
     embeddings = embed_chunks(chunks)
     result = []
+    bulk_tuples = []
     for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-        print(type(embedding), len(embedding))
-        insert_chunk(filename, i, chunk, embedding)
-        result.append({
-            "text": chunk,
-            "embedding": embedding
-        })
+        bulk_tuples.append((filename, i, chunk, embedding))
+        result.append({"text": chunk, "embedding": embedding})
+
+    insert_chunks_bulk(bulk_tuples)
     return result
 
 
