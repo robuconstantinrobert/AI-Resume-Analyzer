@@ -7,12 +7,13 @@ import os
 import google.generativeai as genai
 from celery_app import celery
 
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 
 
 def embed_chunks(chunks: list[str]):
+    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
     return embedding_model.encode(chunks).tolist()
 
 
