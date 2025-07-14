@@ -72,6 +72,7 @@ def process_resume_file(file_bytes: bytes, filename: str):
 
 
 def embed_query(query: str):
+    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
     return embedding_model.encode([query])[0].tolist()
 
 
