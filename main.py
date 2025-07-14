@@ -6,6 +6,19 @@ from celery_app import celery
 
 app = FastAPI()
 
+@app.get("/")
+async def root():
+    return {
+        "message": "AI Resume Analyzer API is running.",
+        "endpoints": [
+            "/upload/",
+            "/upload_status/{task_id}",
+            "/search/",
+            "/chat/"
+        ]
+    }
+
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(

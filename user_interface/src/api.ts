@@ -17,8 +17,6 @@ export async function getUploadStatus(task_id: string) {
   return await res.json();
 }
 
-
-
 export async function searchResumes(query: string, top_k: number = 5) {
   const res = await fetch(`${API_BASE}/search/`, {
     method: "POST",
