@@ -1,6 +1,6 @@
 export {};
 
-const API_BASE = "https://ai-resume-analyzer-yhoq.onrender.com";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8000";
 
 export async function uploadResumes(files: FileList) {
   const formData = new FormData();
