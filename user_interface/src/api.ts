@@ -1,11 +1,11 @@
 export {};
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://ai-resume-analyzer-yhoq.onrender.com";
 
 export async function uploadResumes(files: FileList) {
   const formData = new FormData();
   Array.from(files).forEach((file) => formData.append("files", file));
-  const resp = await fetch("http://localhost:8000/upload/", {
+  const resp = await fetch(`${API_BASE}/upload/`, {
     method: "POST",
     body: formData,
   });
