@@ -37,7 +37,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 def extract_text_from_txt(file_bytes: bytes) -> str:
     return file_bytes.decode('utf-8', errors='ignore')
 
-@celery.task(bind=True)
+
 def process_resume_task(self, file_bytes, filename):
     return process_resume_file(file_bytes, filename)
 

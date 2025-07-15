@@ -2,7 +2,6 @@
 from fastapi import FastAPI, UploadFile, File, Body
 from resume_ingest import process_resume_task, embed_query, call_llm_gemini
 from db import search_similar_chunks
-from celery_app import celery
 
 app = FastAPI()
 
@@ -32,13 +31,13 @@ app.add_middleware(
 
 @app.post("/upload/")
 async def upload_resumes(files: list[UploadFile] = File(...)):
-    tasks = []
+    results = []
     for file in files:
         content = await file.read()
         filename = file.filename
-        task = process_resume_task.delay(content, filename)
-        tasks.append({"filename": filename, "task_id": task.id})
-    return {"submitted": tasks}
+        result = process_resume_task(content, filename)
+        results.append({"filename": filename, "chunks": result})
+    return {"processed": results}
 
 
 @app.post("/search/")
@@ -46,16 +45,6 @@ async def search_resumes(query: str = Body(..., embed=True), top_k: int = 5, off
     embedding = embed_query(query)
     results = search_similar_chunks(embedding, top_k=top_k, offset=offset)
     return {"results": results}
-
-
-@app.get("/upload_status/{task_id}")
-async def get_upload_status(task_id: str):
-    async_result = celery.AsyncResult(task_id)
-    return {
-        "task_id": task_id,
-        "status": async_result.status,
-        "result": async_result.result if async_result.ready() else None
-    }
 
 
 @app.post("/chat/")
