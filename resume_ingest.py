@@ -5,7 +5,6 @@ from sentence_transformers import SentenceTransformer
 from db import insert_chunks_bulk
 import os
 import google.generativeai as genai
-from celery_app import celery
 
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
