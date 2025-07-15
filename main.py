@@ -1,6 +1,6 @@
 
 from fastapi import FastAPI, UploadFile, File, Body
-from resume_ingest import process_resume_task, embed_query, call_llm_gemini
+from resume_ingest import process_resume_file, embed_query, call_llm_gemini
 from db import search_similar_chunks
 
 app = FastAPI()
@@ -35,7 +35,7 @@ async def upload_resumes(files: list[UploadFile] = File(...)):
     for file in files:
         content = await file.read()
         filename = file.filename
-        result = process_resume_task(content, filename)
+        result = process_resume_file(content, filename)
         results.append({"filename": filename, "chunks": result})
     return {"processed": results}
 
