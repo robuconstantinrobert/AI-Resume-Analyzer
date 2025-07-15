@@ -5,15 +5,24 @@ from sentence_transformers import SentenceTransformer
 from db import insert_chunks_bulk
 import os
 import google.generativeai as genai
+import psutil, os
+print("RAM Used:", psutil.Process(os.getpid()).memory_info().rss // 1024**2, "MB")
 
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+embedding_model = None
 
+
+def get_embedding_model():
+    global embedding_model
+    if embedding_model is None:
+        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    return embedding_model
 
 
 def embed_chunks(chunks: list[str]):
-    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    return embedding_model.encode(chunks).tolist()
+    model = get_embedding_model()
+    return model.encode(chunks).tolist()
 
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
@@ -68,8 +77,8 @@ def process_resume_file(file_bytes: bytes, filename: str):
 
 
 def embed_query(query: str):
-    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    return embedding_model.encode([query])[0].tolist()
+    model = get_embedding_model()
+    return model.encode([query])[0].tolist()
 
 
 def call_llm_gemini(prompt: str) -> str:

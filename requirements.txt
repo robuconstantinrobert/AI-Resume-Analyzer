@@ -9,3 +9,4 @@ pgvector
 google-generativeai
 google-genai
 dotenv
+psutil
