@@ -46,6 +46,35 @@ def extract_text_from_txt(file_bytes: bytes) -> str:
     return file_bytes.decode('utf-8', errors='ignore')
 
 
+# def process_resume_file(file_bytes: bytes, filename: str):
+#     if filename.lower().endswith(".pdf"):
+#         text = extract_text_from_pdf(file_bytes)
+#     elif filename.lower().endswith(".txt"):
+#         text = extract_text_from_txt(file_bytes)
+#     else:
+#         raise ValueError("Unsupported file type")
+#     if not text or not text.strip():
+#         raise ValueError("No text found in resume.")
+    
+#     splitter = RecursiveCharacterTextSplitter(
+#         chunk_size=400,
+#         chunk_overlap=80,
+#     )
+#     chunks = splitter.split_text(text)
+#     if not chunks:
+#         raise ValueError("Chunking produced no output.")
+
+#     embeddings = embed_chunks(chunks)
+#     result = []
+#     bulk_tuples = []
+#     for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+#         bulk_tuples.append((filename, i, chunk, embedding))
+#         result.append({"text": chunk, "embedding": embedding})
+
+#     insert_chunks_bulk(bulk_tuples)
+#     return result
+
+
 def process_resume_file(file_bytes: bytes, filename: str):
     if filename.lower().endswith(".pdf"):
         text = extract_text_from_pdf(file_bytes)
@@ -55,25 +84,28 @@ def process_resume_file(file_bytes: bytes, filename: str):
         raise ValueError("Unsupported file type")
     if not text or not text.strip():
         raise ValueError("No text found in resume.")
-    
+
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=400,
         chunk_overlap=80,
     )
-    chunks = splitter.split_text(text)
-    if not chunks:
-        raise ValueError("Chunking produced no output.")
 
-    embeddings = embed_chunks(chunks)
     result = []
     bulk_tuples = []
-    for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-        bulk_tuples.append((filename, i, chunk, embedding))
-        result.append({"text": chunk, "embedding": embedding})
+    batch_size = 2
 
-    insert_chunks_bulk(bulk_tuples)
+    chunks = splitter.split_text(text)
+    for i in range(0, len(chunks), batch_size):
+        batch_chunks = chunks[i:i+batch_size]
+        embeddings = embed_chunks(batch_chunks)
+        for j, (chunk, embedding) in enumerate(zip(batch_chunks, embeddings)):
+            idx = i + j
+            bulk_tuples.append((filename, idx, chunk, embedding))
+            result.append({"text": chunk, "embedding": embedding})
+        insert_chunks_bulk(bulk_tuples)
+        bulk_tuples = []
+
     return result
-
 
 
 def embed_query(query: str):
