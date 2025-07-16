@@ -120,6 +120,34 @@ Visit `http://localhost:3000` (or specified port) for the web UI. Ensure the bac
 
 ---
 
+---
+
+## Deployment
+
+* **Frontend**: Deployed on Vercel at [https://ai-resume-analyzer-1n3i.vercel.app/](https://ai-resume-analyzer-1n3i.vercel.app/)
+* **Backend**: Deployed on Render at [https://ai-resume-analyzer-yhoq.onrender.com/](https://ai-resume-analyzer-yhoq.onrender.com/)
+
+> **Note:** Despite optimizing for minimal memory usage, the Render backend frequently exceeds its free-tier memory limit and throws an “exceeded memory” error when invoking endpoints.
+
+### Memory Optimization Efforts
+
+* Refactored processing logic to reduce in-memory data structures.
+* Streamed file parsing and chunking to lower peak RAM usage.
+* Limited worker concurrency to fit within Render’s free-tier constraints.
+
+### Asynchronous Processing Attempt
+
+* Integrated Upstash Redis and Celery for asynchronous resume uploads and processing.
+* Aimed to enqueue and handle multiple upload tasks concurrently.
+* Hit the 512 MB RAM cap on Upstash free tier, leading to task failures under load.
+
+### Database
+
+* Used Aiven PostgreSQL with `pgvector` extension for vector storage and similarity search.
+
+---
+
+
 ## Deliverables
 
 1. **Backend System:**
